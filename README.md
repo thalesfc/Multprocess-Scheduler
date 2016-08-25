@@ -6,3 +6,5 @@
 process die
 1. Use a multiprocessing.Queue to exchange tasks between main process and
 "service" process
+1. __run() method internally uses a priorityQueue to keep track of the order
+of execution
