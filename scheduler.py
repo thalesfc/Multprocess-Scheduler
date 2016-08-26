@@ -1,7 +1,3 @@
-# TODO list
-# 4 - use a conditional variable to delay between execution
-# 5 - spawn daemon-processes
-
 from collections import namedtuple
 from multiprocessing import SimpleQueue, Process, Condition
 from time import sleep, time
@@ -47,23 +43,35 @@ class MultiProcessScheduler:
         tasksQueue = []
         print("[run] starting", queue.empty())
         while True:
+            # remove tasks from queue and add to
+            # internal priorityQueue (tasksQueue)
             while not queue.empty():
                 task = queue.get()
-                heappush(tasksQueue, task)
-            # TODO create logic of priority queue
-            while tasksQueue:
+                heappush(tasksQueue,task)
+                print("[run] adding task to list: ", task)
+
+            # if there are task on the priority queue,
+            # check when the closest one should be runned
+            if tasksQueue:
                 etime, _, _ = tasksQueue[0]
                 now = time()
                 # TODO use a pipe to send the most recent task
                 if etime < now:
-                    _, fn, args = task = heappop(tasksQueue)
+                    # only pop before running
+                    # if a task is not being running in a given time,
+                    # the next this loop runs that task might not be the
+                    # closest one
+                    _, fn, args = heappop(tasksQueue)
                     print("[run] running:", task)
                     fn(*args) # TODO spawn new process?
                 else:
                     delay = etime - now
                     print("[run] sleeping for ", delay)
-                    sleep(delay) # TODO change to cond. variable
-            if queue.empty():
+                    cond.acquire()
+                    cond.wait(timeout=delay)
+
+            if not taskQueue and  queue.empty():
+                # only stop the service if there are no task anwhere
                 break
         print("[run] done")
 
@@ -86,7 +94,14 @@ if __name__ == "__main__":
     # test 2.2 - add a valid task
     print("[main] adding fn(9)")
     s.add(Task(time() + 9, fnfoo, "9"))
-    print("[main] adding fn(5)")
-    s.add(Task(time() + 5, fnfoo, "5"))
-    print("[main] adding fn(7)")
-    s.add(Task(time() + 7, fnfoo, "7"))
+
+    sleep(3)
+
+    print("[main] adding fn(1)")
+    s.add(Task(time() + 1, fnfoo, "1"))
+    print("[main] adding fn(2)")
+    s.add(Task(time() + 2, fnfoo, "2"))
+
+    s.cond.acquire()
+    s.cond.notify()
+    s.cond.release()

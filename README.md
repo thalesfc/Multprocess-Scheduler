@@ -11,3 +11,5 @@ execution order
 1. users should not run __run(), instead, everytime a new task is added we
 check for the state of service (i.e., __run()) and re-spawn a new process if
 necessary
+1. Use a condition variable to delay between execution, this way we can
+wake up the service process in case of a more recent task
