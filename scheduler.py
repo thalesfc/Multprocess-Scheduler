@@ -1,7 +1,6 @@
 # TODO list
 # 4 - use a conditional variable to delay between execution
 # 5 - spawn daemon-processes
-# 6 - there should be no "run()" method, adding a new task fires the service
 
 from collections import namedtuple
 from multiprocessing import SimpleQueue, Process, Condition
@@ -12,14 +11,17 @@ Task = namedtuple('Task', 'time, fn, args')
 
 class MultiProcessScheduler:
     def __init__(self):
-        self.cond = cond = Condition()  # default to RLock
-        self.queue = queue = SimpleQueue()
-        self.service = Process(
-            target=MultiProcessScheduler.__run,
-            args=(cond,queue),
-            daemon=False
-        )
-        self.service.start()
+        self.cond = Condition()  # default to RLock
+
+        # TODO start a pipe to have the most recent task
+
+        # multiprocessing.Queue is used here to exchange task between the add
+        # call and the service running __run() method
+        self.queue = SimpleQueue()
+
+        # dummy Process, the correct one will be created when the first
+        # task is added
+        self.service = Process()
 
     # TODO create destructor to avoid leaving with items on queue
 
@@ -28,12 +30,20 @@ class MultiProcessScheduler:
             raise TypeError
         self.queue.put(task)
 
-        # TODO call __run in case it is not alive
+        # TODO read the pipe to get the recent element
         # TODO if this new task is the closedt one, call __run
+        if not self.service.is_alive():
+            # it seams that Process.run() is a blocking call
+            # so the only way to re-run the process is to create another one
+            self.service = Process(
+                target=MultiProcessScheduler.__run,
+                args=(self.cond, self.queue),
+                daemon=False
+            )
+            self.service.start()
 
     @staticmethod
     def __run(cond, queue):
-        sleep(5) # TODO remove
         tasksQueue = []
         print("[run] starting", queue.empty())
         while True:
@@ -44,6 +54,7 @@ class MultiProcessScheduler:
             while tasksQueue:
                 etime, _, _ = tasksQueue[0]
                 now = time()
+                # TODO use a pipe to send the most recent task
                 if etime < now:
                     _, fn, args = task = heappop(tasksQueue)
                     print("[run] running:", task)
@@ -73,7 +84,9 @@ if __name__ == "__main__":
         raise Exception("add should only accept a Task")
 
     # test 2.2 - add a valid task
-    print("[main] adding fn(5)")
+    print("[main] adding fn(9)")
     s.add(Task(time() + 9, fnfoo, "9"))
+    print("[main] adding fn(5)")
     s.add(Task(time() + 5, fnfoo, "5"))
+    print("[main] adding fn(7)")
     s.add(Task(time() + 7, fnfoo, "7"))
