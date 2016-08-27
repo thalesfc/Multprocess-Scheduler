@@ -70,13 +70,14 @@ class MultiProcessScheduler:
                     cond.acquire()
                     cond.wait(timeout=delay)
 
-            if not taskQueue and  queue.empty():
+            if not tasksQueue and  queue.empty():
                 # only stop the service if there are no task anwhere
                 break
         print("[run] done")
 
 
 if __name__ == "__main__":
+    # TODO move this to test/
     def fnfoo(arg): print(arg)
 
     # test 1  - the spawmed process is a not daemon process
