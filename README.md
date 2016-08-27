@@ -13,3 +13,6 @@ check for the state of service (i.e., __run()) and re-spawn a new process if
 necessary
 1. Use a condition variable to delay between execution, this way we can
 wake up the service process in case of a more recent task
+1. Use a pipe so that the service method can update with the closest
+next task to execute (this way, if a new task with closest time is added
+then the service is waked up)
