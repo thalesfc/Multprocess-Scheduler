@@ -3,7 +3,9 @@ from multiprocessing import SimpleQueue, Process, Condition
 from time import sleep, time
 from heapq import heappush, heappop
 
-Task = namedtuple('Task', 'time, fn, args')
+class Task(namedtuple('Task', 'time, fn, args')):
+    def __repr__(self):
+        return "%s(%s) @%s" % (self.fn.__name__, self.args, self.time)
 
 class MultiProcessScheduler:
     def __init__(self):
