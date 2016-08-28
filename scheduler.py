@@ -90,7 +90,8 @@ class MultiProcessScheduler:
                     # closest one
                     _, fn, args = heappop(tasksQueue)
                     print("[run] running:", task)
-                    fn(*args) # TODO spawn new process?
+                    p = Process(target=fn, args=args, daemon=False)
+                    p.start()
                 else:
                     delay = etime - now
 
