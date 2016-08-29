@@ -1,5 +1,11 @@
 # MultiProcess-Scheduler
 
+### Introduction
+
+A implementation of a multi-process scheduler. Basically, there is a "service"
+process who keep track of the task to be executed. Every task spawn a new
+process.
+
 ### Design implementation
 
 1. The "service" process  has daemon=False, so it will stay alive after parent
